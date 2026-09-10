@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stellenwertsystem-Board v003</title>
+<style>
+:root{
+  --bg:#f6f7f9; --panel:#ffffff; --ink:#18212b; --muted:#66717f;
+  --line:#d8dee6; --accent:#275dad; --accent2:#e8f0fc; --warm:#f1c66f;
+  --danger:#a33b3b; --shadow:0 8px 28px rgba(35,50,70,.09);
+  --anim-ms:520ms;
+}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+body{padding:clamp(10px,2vw,24px)}
+button,input,select{font:inherit}
+button{touch-action:manipulation}
+.app{max-width:1500px;margin:auto}
+header{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin:0 2px 14px}
+h1{font-size:clamp(1.35rem,2.5vw,2.15rem);line-height:1.1;margin:0;letter-spacing:-.025em}
+.version{font-size:.78rem;color:var(--muted);font-weight:700}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
+.controls{padding:14px;display:grid;grid-template-columns:minmax(180px,1.4fr) minmax(125px,.7fr) minmax(170px,1fr);gap:12px;align-items:end}
+.control label{display:block;font-size:.78rem;font-weight:750;color:var(--muted);margin:0 0 6px 2px}
+.field-row{display:flex;gap:8px}
+input[type=number],select{width:100%;height:46px;border:1px solid #b9c3cf;border-radius:11px;background:#fff;color:var(--ink);padding:0 12px;outline:none}
+input:focus,select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(39,93,173,.14)}
+.primary,.secondary,.tertiary{min-height:46px;border-radius:11px;border:1px solid transparent;padding:9px 14px;font-weight:750;cursor:pointer;transition:.15s ease;background:#fff}
+.primary{background:var(--accent);color:#fff}.primary:hover{background:#1f4d91}
+.secondary{border-color:#8ca6ca;color:#174985}.secondary:hover{background:var(--accent2)}
+.tertiary{border-color:var(--line);color:#34404d}.tertiary:hover{background:#f1f4f7}
+button:disabled,input:disabled,select:disabled{opacity:.48;cursor:not-allowed}
+.speed-wrap{display:flex;align-items:center;gap:9px;height:46px;padding:0 10px;border:1px solid var(--line);border-radius:11px}
+.speed-wrap input{width:100%}.speed-value{min-width:58px;text-align:right;color:var(--muted);font-size:.82rem}
+.actions{display:flex;flex-wrap:wrap;gap:9px;padding:0 14px 14px}
+.status{margin:12px 0;padding:12px 16px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.stat{min-width:0}.stat-label{font-size:.73rem;text-transform:uppercase;letter-spacing:.055em;color:var(--muted);font-weight:800}.stat-value{margin-top:4px;font-size:clamp(.92rem,1.6vw,1.1rem);font-weight:760;overflow-wrap:anywhere}.digits{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:var(--accent)}
+.board-panel{overflow:hidden;position:relative}
+.board-scroller{overflow-x:auto;overscroll-behavior-x:contain;padding:14px 14px 8px}
+.board{display:grid;min-height:430px;gap:8px;align-items:stretch}
+.column{min-width:118px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(#fbfcfe,#f5f7fa);display:grid;grid-template-rows:auto 1fr;overflow:hidden;position:relative}
+.column-head{padding:10px 8px 9px;text-align:center;border-bottom:1px solid var(--line);background:#fff;position:sticky;top:0;z-index:2}
+.column-name{font-weight:820;font-size:.88rem;min-height:1.15em}.column-value{font-size:.73rem;color:var(--muted);margin-top:3px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.column-count{display:inline-flex;margin-top:6px;min-width:28px;height:22px;justify-content:center;align-items:center;border-radius:999px;background:#e9edf3;font-size:.75rem;font-weight:800;padding:0 7px}
+.objects{padding:10px;display:flex;align-content:flex-start;align-items:flex-start;justify-content:center;flex-wrap:wrap;gap:5px;overflow-y:auto;position:relative}
+.object{border:0;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;cursor:pointer;position:relative;transition:filter .15s,transform .15s;outline:none;background:transparent}
+.object:hover{filter:brightness(.94);transform:translateY(-1px)}.object:focus-visible{outline:3px solid rgba(39,93,173,.35);outline-offset:3px}
+.egg{width:15px;height:20px;border-radius:55% 55% 48% 48% / 65% 65% 38% 38%;background:linear-gradient(145deg,#fffdf6 15%,#eddcae 100%);border:1px solid #bda66b;box-shadow:inset -2px -2px 3px rgba(100,70,20,.12)}
+.carton{width:28px;height:22px;border-radius:5px;background:linear-gradient(#d9e0cf,#aeb9a1);border:1px solid #7c8972;box-shadow:inset 0 5px 0 rgba(255,255,255,.3)}
+.carton:after{content:"";width:15px;height:4px;border-top:2px dotted #73806b}
+.box{width:30px;height:28px;border-radius:4px;background:#d8a85d;border:1px solid #9e7132;box-shadow:inset 0 7px 0 #e8c07d}
+.crate{width:34px;height:31px;border-radius:3px;background:repeating-linear-gradient(0deg,#b97938 0 5px,#d59a58 5px 8px);border:2px solid #855126}
+.container{width:38px;height:33px;border-radius:3px;background:repeating-linear-gradient(90deg,#6e8da3 0 4px,#7f9fb4 4px 7px);border:2px solid #4c687c}
+.abstract{width:39px;height:35px;border-radius:8px;background:linear-gradient(145deg,#6f6a9a,#918bb7);border:2px solid #514c78}
+.object.large-list{transform:scale(.86);margin:-1px}
+.empty-note{color:#9aa3ad;font-size:.78rem;margin:auto;text-align:center;align-self:center}
+.board-footer{padding:11px 15px 14px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--muted);font-size:.82rem;flex-wrap:wrap}
+.legend{display:flex;gap:14px;flex-wrap:wrap}.legend span{display:inline-flex;align-items:center;gap:6px}.dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.busy{display:none;align-items:center;gap:7px;color:var(--accent);font-weight:750}.busy.on{display:flex}.spinner{width:15px;height:15px;border:2px solid #bfd0ea;border-top-color:var(--accent);border-radius:50%;animation:spin .75s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.flying{position:fixed;z-index:9999;pointer-events:none;margin:0!important;transition:none!important}
+.message{min-height:22px;padding:5px 16px 12px;color:var(--danger);font-size:.84rem;font-weight:650}
+.help{margin-top:12px;padding:13px 16px;color:#4d5967;font-size:.86rem;line-height:1.45}.help strong{color:var(--ink)}
+
+.learning{margin-top:16px;padding:clamp(14px,2vw,22px)}.learning h2{margin:0 0 6px;font-size:clamp(1.2rem,2vw,1.65rem)}.learning-intro{margin:0 0 16px;color:var(--muted);line-height:1.45}.task-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.task-card{border:1px solid var(--line);border-radius:14px;padding:15px;background:#fbfcfe;display:flex;flex-direction:column;gap:10px}.task-card.wide{grid-column:1/-1}.task-number{display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:50%;background:var(--accent);color:#fff;font-weight:850}.task-card h3{margin:0}.task-card p{margin:0;line-height:1.45}.task-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto}.task-actions button{min-height:40px}.answer-area{width:100%;min-height:70px;resize:vertical;border:1px solid #b9c3cf;border-radius:10px;padding:10px;font:inherit}.reveal{display:none;padding:10px 12px;background:#edf4ff;border-left:4px solid var(--accent);border-radius:8px;line-height:1.45}.reveal.open{display:block}.quiz{margin-top:18px;border-top:2px solid #e7ebf0;padding-top:18px}.quiz-head{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.quiz-score{font-weight:850;color:var(--accent)}.quiz-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0}.quiz-item{border:1px solid var(--line);border-radius:12px;padding:13px}.quiz-item label{display:block;font-weight:760;line-height:1.4;margin-bottom:8px}.quiz-row{display:flex;gap:8px}.quiz-row input{min-width:0;flex:1;height:42px;border:1px solid #b9c3cf;border-radius:9px;padding:0 10px}.quiz-feedback{min-height:20px;margin-top:6px;font-size:.82rem;font-weight:750}.quiz-feedback.ok{color:#26733f}.quiz-feedback.no{color:#a33b3b}@media(max-width:780px){.task-grid,.quiz-grid{grid-template-columns:1fr}.task-card.wide{grid-column:auto}}
+@media(max-width:780px){.controls{grid-template-columns:1fr 1fr}.control.number{grid-column:1/-1}.status{grid-template-columns:1fr}.column{min-width:105px}.board{min-height:390px}.actions button{flex:1 1 150px}}
+@media(prefers-reduced-motion:reduce){:root{--anim-ms:1ms}.spinner{animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+<header><div><h1>Stellenwertsystem-Board</h1><div class="version">Version v003</div></div></header>
+
+<section class="panel controls" aria-label="Einstellungen">
+  <div class="control number">
+    <label for="numberInput">Anzahl im Dezimalsystem (0 bis 1000)</label>
+    <div class="field-row"><input id="numberInput" type="number" min="0" max="1000" step="1" value="137" inputmode="numeric"><button id="applyNumber" class="primary">Darstellen</button></div>
+  </div>
+  <div class="control">
+    <label for="baseSelect">Bündelungszahl</label>
+    <select id="baseSelect" aria-label="Bündelungszahl"></select>
+  </div>
+  <div class="control">
+    <label for="speed">Animationstempo</label>
+    <div class="speed-wrap"><span>ruhig</span><input id="speed" type="range" min="180" max="900" value="520" step="20"><span class="speed-value" id="speedValue">520 ms</span></div>
+  </div>
+</section>
+
+<div class="actions" aria-label="Aktionen">
+  <button id="packOne" class="secondary">Eine Stelle abpacken</button>
+  <button id="packAll" class="primary">Vollständig abpacken</button>
+  <button id="undo" class="tertiary">Rückgängig</button>
+  <button id="reset" class="tertiary">Zurücksetzen</button>
+</div>
+
+<section class="panel status" aria-live="polite">
+  <div class="stat"><div class="stat-label">Anzahl</div><div class="stat-value" id="decimalDisplay"></div></div>
+  <div class="stat"><div class="stat-label">Darstellung zur Basis <span id="baseLabel"></span></div><div class="stat-value digits" id="baseDisplay"></div></div>
+  <div class="stat"><div class="stat-label">Stellenwertzerlegung</div><div class="stat-value" id="decomposition"></div></div>
+</section>
+
+<section class="panel board-panel">
+  <div class="board-scroller"><div id="board" class="board" aria-label="Stellenwerttafel"></div></div>
+  <div class="board-footer">
+    <div class="legend"><span><i class="dot"></i>Einer stehen ganz rechts.</span><span>Behälter anklicken: ein Bündel öffnen.</span></div>
+    <div id="busy" class="busy"><i class="spinner"></i><span id="busyText">Animation läuft</span></div>
+  </div>
+  <div id="message" class="message" role="alert"></div>
+</section>
+
+<div class="panel help"><strong>Bedienung:</strong> Eine Zahl wird zuerst vollständig als einzelne Eier dargestellt. „Eine Stelle abpacken“ bildet genau ein mögliches Bündel. „Vollständig abpacken“ bündelt die Spalten nacheinander. Beim Wechsel der Bündelungszahl wird die Darstellung zuerst sichtbar bis zu den Einern aufgelöst.</div>
+<section class="panel learning" id="aufgaben"><h2>Arbeitsaufträge</h2><p class="learning-intro">Bearbeite die Aufträge mit dem Board. Übernimm das Beispiel, beobachte die Animation und notiere, was in den Spalten geschieht.</p><div class="task-grid">
+<article class="task-card"><span class="task-number">1</span><h3>Darstellung im Sechsersystem</h3><p>Übernimm <strong>137</strong> bei Basis <strong>6</strong>. Packe zuerst nur eine Stelle ab. Wie viele Eier und wie viele 6er-Bündel bleiben? Packe danach vollständig ab und notiere die Zahl im Sechsersystem.</p><textarea class="answer-area" placeholder="Meine Beobachtung und Antwort …"></textarea><div class="task-actions"><button class="secondary setup-task" data-number="137" data-base="6">137 und Basis 6 übernehmen</button><button class="tertiary reveal-btn">Lösung anzeigen</button></div><div class="reveal">Nach der ersten Stelle: 22 Sechserbündel und 5 Eier. Vollständig gilt: <strong>137₁₀ = 345₆</strong>.</div></article>
+<article class="task-card"><span class="task-number">2</span><h3>Dieselbe Anzahl in zwei Systemen</h3><p>Stelle <strong>94</strong> zuerst im Zehnersystem vollständig dar. Wechsle danach zu Basis <strong>5</strong>, beobachte das Auflösen und packe erneut ab. Vergleiche Ziffern und belegte Stellen.</p><textarea class="answer-area" placeholder="Was bleibt gleich, was verändert sich?"></textarea><div class="task-actions"><button class="secondary setup-task" data-number="94" data-base="10">94 im Zehnersystem starten</button><button class="tertiary reveal-btn">Lösung anzeigen</button></div><div class="reveal"><strong>94₁₀ = 334₅</strong>. Die Anzahl bleibt gleich. Bündelungsregel, Stellenwerte und Ziffernfolge ändern sich.</div></article>
+<article class="task-card"><span class="task-number">3</span><h3>Von Basis 5 zu Basis 7</h3><p>Wandle <strong>243₅</strong> ins Siebenersystem um. Bestimme zuerst den Dezimalwert. Prüfe die Ausgangszahl bei Basis 5, wechsle zu Basis 7 und packe vollständig ab.</p><textarea class="answer-area" placeholder="Dezimalwert, Beobachtung und Ergebnis …"></textarea><div class="task-actions"><button class="secondary setup-task" data-number="73" data-base="5">Passende Darstellung starten</button><button class="tertiary reveal-btn">Lösung anzeigen</button></div><div class="reveal"><strong>243₅ = 2 · 25 + 4 · 5 + 3 = 73₁₀ = 133₇</strong>.</div></article>
+<article class="task-card"><span class="task-number">4</span><h3>Direkt vom Vierer- ins Achtersystem?</h3><p>Untersuche <strong>312₄</strong>. Stelle die Zahl bei Basis 4 dar und wechsle zu Basis 8. Formuliere eine Regel für eine direkte Umrechnung ohne Dezimalsystem.</p><textarea class="answer-area" placeholder="Meine Regel für die direkte Umrechnung …"></textarea><div class="task-actions"><button class="secondary setup-task" data-number="54" data-base="4">312₄ untersuchen</button><button class="tertiary reveal-btn">Lösung anzeigen</button></div><div class="reveal"><strong>312₄ = 66₈</strong>. Beide Basen sind Zweierpotenzen. Jede Viererziffer entspricht 2 Binärstellen, jede Achterziffer 3 Binärstellen: 3|1|2₄ → 11|01|10₂ → 110|110₂ → 6|6₈.</div></article>
+<article class="task-card wide"><span class="task-number">5</span><h3>Eigene Vermutung prüfen</h3><p>Wähle eine Zahl zwischen 50 und 200. Sage voraus, ob Basis 3 oder Basis 12 mehr Stellen benötigt. Prüfe die Vermutung mit der Simulation und begründe sie.</p><textarea class="answer-area" placeholder="Zahl, Vermutung, Prüfung und Begründung …"></textarea><div class="task-actions"><button class="tertiary reveal-btn">Hinweis anzeigen</button></div><div class="reveal">Je kleiner die Basis, desto schneller werden weitere Stellen benötigt. Vergleiche die höchsten belegten Spalten.</div></article></div>
+<section class="quiz"><div class="quiz-head"><div><h2>Kurzquiz</h2><p class="learning-intro">Vier repetierende Fragen. „Neue Fragen“ erzeugt eine neue Runde.</p></div><div class="quiz-score" id="quizScore">0 von 4 richtig</div></div><div id="quizGrid" class="quiz-grid"></div><div class="task-actions"><button id="checkQuiz" class="primary">Quiz auswerten</button><button id="newQuiz" class="tertiary">Neue Fragen</button></div></section></section>
+
+</div>
+<script>
+'use strict';
+const $ = s => document.querySelector(s);
+const board = $('#board');
+const numberInput = $('#numberInput');
+const baseSelect = $('#baseSelect');
+const speed = $('#speed');
+const speedValue = $('#speedValue');
+const controls = [numberInput, baseSelect, speed, $('#applyNumber'), $('#packOne'), $('#packAll'), $('#undo'), $('#reset')];
+const symbols = '0123456789ABCDEF';
+let state = { total:137, base:10, counts:[], busy:false };
+let history = [];
+
+function powersFor(base){
+  const p=[1];
+  while(p[p.length-1] <= 1000) p.push(p[p.length-1]*base);
+  return p;
+}
+function emptyCounts(base){ return Array(powersFor(base).length).fill(0); }
+function snapshot(){ return {total:state.total,base:state.base,counts:[...state.counts]}; }
+function pushHistory(){ history.push(snapshot()); if(history.length>80) history.shift(); }
+function classicName(value){
+  const names={1:'Einer',10:'Zehner',100:'Hunderter',1000:'Tausender',10000:'Zehntausender',100000:'Hunderttausender',1000000:'Millionen'};
+  return names[value] || value.toLocaleString('de-CH')+'er';
+}
+function columnName(pos){
+  const value=Math.pow(state.base,pos);
+  if(state.base===10) return classicName(value);
+  if(pos===0) return 'Einer';
+  return value.toLocaleString('de-CH')+'er-Stelle';
+}
+function valueLabel(pos){
+  const value=Math.pow(state.base,pos);
+  return pos===0 ? '1' : `${state.base}^${pos} = ${value.toLocaleString('de-CH')}`;
+}
+function objectClass(pos){ return ['egg','carton','box','crate','container'][pos] || 'abstract'; }
+function objectLabel(pos){ return pos===0 ? 'Ein Ei' : `Ein Bündel im Wert von ${Math.pow(state.base,pos)}`; }
+function isCanonical(){ return state.counts.every(c=>c<state.base); }
+function toBase(n,b){ if(n===0)return '0'; let out=''; while(n){out=symbols[n%b]+out;n=Math.floor(n/b)} return out; }
+function currentSum(){ return state.counts.reduce((s,c,i)=>s+c*Math.pow(state.base,i),0); }
+
+function render(){
+  const powers=powersFor(state.base);
+  while(state.counts.length<powers.length) state.counts.push(0);
+  if(state.counts.length>powers.length) state.counts.length=powers.length;
+  board.style.gridTemplateColumns=`repeat(${powers.length}, minmax(118px, 1fr))`;
+  board.innerHTML='';
+  for(let pos=powers.length-1;pos>=0;pos--){
+    const col=document.createElement('section'); col.className='column'; col.dataset.pos=pos;
+    const head=document.createElement('div'); head.className='column-head';
+    head.innerHTML=`<div class="column-name">${columnName(pos)}</div><div class="column-value">${valueLabel(pos)}</div><div class="column-count" title="Objekte in dieser Spalte">${state.counts[pos]}</div>`;
+    const objects=document.createElement('div'); objects.className='objects'; objects.dataset.pos=pos;
+    const many=state.counts[pos]>160;
+    for(let i=0;i<state.counts[pos];i++){
+      const obj=document.createElement(pos===0?'span':'button');
+      obj.className=`object ${objectClass(pos)}${many?' large-list':''}`; obj.dataset.index=i;
+      obj.setAttribute('aria-label',objectLabel(pos)); obj.title=pos===0?'Ein Ei':`${objectLabel(pos)} öffnen`;
+      if(pos>0) obj.addEventListener('click',()=>unpackOne(pos));
+      objects.appendChild(obj);
+    }
+    if(state.counts[pos]===0){const e=document.createElement('div');e.className='empty-note';e.textContent='leer';objects.appendChild(e)}
+    col.append(head,objects); board.appendChild(col);
+  }
+  $('#decimalDisplay').textContent=`${state.total.toLocaleString('de-CH')}_10`;
+  $('#baseLabel').textContent=state.base;
+  $('#baseDisplay').textContent=`${toBase(state.total,state.base)}_${state.base}${isCanonical()?'':'  (noch nicht vollständig gebündelt)'}`;
+  const parts=[];
+  for(let i=state.counts.length-1;i>=0;i--) if(state.counts[i]) parts.push(`${state.counts[i]} · ${state.base}^${i}`);
+  $('#decomposition').textContent=(parts.length?parts.join(' + '):'0')+` = ${currentSum().toLocaleString('de-CH')}`;
+  $('#undo').disabled=state.busy||history.length===0;
+  $('#packOne').disabled=state.busy||findPackable()<0; $('#packAll').disabled=state.busy||findPackable()<0;
+  $('#reset').disabled=state.busy; $('#applyNumber').disabled=state.busy; baseSelect.disabled=state.busy; numberInput.disabled=state.busy;
+}
+function setBusy(on,text='Animation läuft'){
+  state.busy=on; $('#busy').classList.toggle('on',on); $('#busyText').textContent=text;
+  controls.forEach(el=>el.disabled=on); render();
+}
+function duration(){ return Number(speed.value); }
+function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+function rectCenter(el){const r=el.getBoundingClientRect();return{x:r.left+r.width/2,y:r.top+r.height/2}}
+function cloneFlying(el){
+  const r=el.getBoundingClientRect(), c=el.cloneNode(true); c.classList.add('flying'); c.removeAttribute('id');
+  Object.assign(c.style,{left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px'}); document.body.appendChild(c); return c;
+}
+async function animatePack(pos, groups=1){
+  const source=[...document.querySelectorAll(`.objects[data-pos="${pos}"] .object`)].slice(0,groups*state.base);
+  const target=document.querySelector(`.objects[data-pos="${pos+1}"]`); if(!source.length||!target)return;
+  const t=rectCenter(target), d=duration();
+  const anims=source.map((el,i)=>{const c=cloneFlying(el),r=el.getBoundingClientRect();const g=Math.floor(i/state.base);const spread=(g-(groups-1)/2)*8;return c.animate([{transform:'translate(0,0) scale(1)',opacity:1},{transform:`translate(${t.x-r.left-r.width/2+spread}px,${t.y-r.top-r.height/2}px) scale(.28)`,opacity:.18}],{duration:d,easing:'cubic-bezier(.3,.05,.2,1)',fill:'forwards'}).finished.then(()=>c.remove())});
+  await Promise.all(anims);
+}
+async function animateUnpack(pos, parents=1){
+  const source=[...document.querySelectorAll(`.objects[data-pos="${pos}"] .object`)].slice(0,parents);
+  const target=document.querySelector(`.objects[data-pos="${pos-1}"]`); if(!source.length||!target)return;
+  const t=rectCenter(target),d=duration(); const anims=[];
+  source.forEach((el,p)=>{const er=el.getBoundingClientRect();for(let j=0;j<state.base;j++){const c=el.cloneNode(true);c.className=`object ${objectClass(pos-1)} flying`;Object.assign(c.style,{left:er.left+'px',top:er.top+'px',width:er.width+'px',height:er.height+'px'});document.body.appendChild(c);const angle=(j/state.base)*Math.PI*2,rad=10+Math.min(state.base,10)*1.2;const tx=t.x-er.left-er.width/2+Math.cos(angle)*rad+(p-(parents-1)/2)*6,ty=t.y-er.top-er.height/2+Math.sin(angle)*rad;anims.push(c.animate([{transform:'scale(.3)',opacity:.2},{transform:`translate(${tx}px,${ty}px) scale(1)`,opacity:1}],{duration:d,easing:'cubic-bezier(.2,.7,.2,1)',fill:'forwards'}).finished.then(()=>c.remove()))}});
+  await Promise.all(anims);
+}
+function findPackable(){for(let i=0;i<state.counts.length-1;i++)if(state.counts[i]>=state.base)return i;return -1}
+async function packOne(){
+  const pos=findPackable(); if(pos<0)return; const groups=Math.floor(state.counts[pos]/state.base);
+  pushHistory(); setBusy(true,'Eine Stelle wird abgepackt'); await animatePack(pos,groups);
+  state.counts[pos]-=groups*state.base; state.counts[pos+1]+=groups; setBusy(false); render();
+}
+async function packAll(){
+  if(findPackable()<0)return; pushHistory(); setBusy(true,'Vollständiges Abpacken läuft');
+  for(let pos=0;pos<state.counts.length-1;pos++){
+    const groups=Math.floor(state.counts[pos]/state.base); if(!groups)continue;
+    await animatePack(pos,groups); state.counts[pos]-=groups*state.base;state.counts[pos+1]+=groups;render(); await sleep(Math.min(120,duration()/4));
+  }
+  setBusy(false);render();
+}
+async function unpackOne(pos){
+  if(state.busy||pos<=0||!state.counts[pos])return; pushHistory(); setBusy(true,'Ein Bündel wird geöffnet');await animateUnpack(pos,1);state.counts[pos]--;state.counts[pos-1]+=state.base;setBusy(false);render();
+}
+async function dissolveAllForBaseChange(newBase){
+  pushHistory();setBusy(true,'Altes System wird aufgelöst');
+  for(let pos=state.counts.length-1;pos>0;pos--){
+    const parents=state.counts[pos];if(!parents)continue;await animateUnpack(pos,parents);state.counts[pos]=0;state.counts[pos-1]+=parents*state.base;render();await sleep(Math.min(140,duration()/4));
+  }
+  const total=state.counts[0];state.base=newBase;state.counts=emptyCounts(newBase);state.counts[0]=total;baseSelect.value=String(newBase);setBusy(false);render();
+}
+function applyNumber(){
+  const raw=Number(numberInput.value); if(!Number.isInteger(raw)||raw<0||raw>1000){$('#message').textContent='Bitte eine ganze Zahl zwischen 0 und 1000 eingeben.';return}
+  $('#message').textContent='';pushHistory();state.total=raw;state.counts=emptyCounts(state.base);state.counts[0]=raw;render();
+}
+function reset(){pushHistory();state.counts=emptyCounts(state.base);state.counts[0]=state.total;render()}
+function undo(){if(!history.length||state.busy)return;const s=history.pop();state.total=s.total;state.base=s.base;state.counts=[...s.counts];numberInput.value=s.total;baseSelect.value=s.base;render()}
+
+for(let b=2;b<=16;b++){const o=document.createElement('option');o.value=b;o.textContent=`${b} (${b===10?'Zehnersystem':'Basis '+b})`;if(b===10)o.selected=true;baseSelect.appendChild(o)}
+state.counts=emptyCounts(10);state.counts[0]=137;
+$('#applyNumber').addEventListener('click',applyNumber);numberInput.addEventListener('keydown',e=>{if(e.key==='Enter')applyNumber()});
+$('#packOne').addEventListener('click',packOne);$('#packAll').addEventListener('click',packAll);$('#reset').addEventListener('click',reset);$('#undo').addEventListener('click',undo);
+baseSelect.addEventListener('change',()=>{const b=Number(baseSelect.value);if(b!==state.base)dissolveAllForBaseChange(b)});
+speed.addEventListener('input',()=>{speedValue.textContent=speed.value+' ms';document.documentElement.style.setProperty('--anim-ms',speed.value+'ms')});
+function loadTask(number,base){if(state.busy)return;pushHistory();state.total=number;state.base=base;state.counts=emptyCounts(base);state.counts[0]=number;numberInput.value=number;baseSelect.value=base;render();document.querySelector('.board-panel').scrollIntoView({behavior:'smooth',block:'start'})}
+document.querySelectorAll('.setup-task').forEach(b=>b.addEventListener('click',()=>loadTask(+b.dataset.number,+b.dataset.base)));
+document.querySelectorAll('.reveal-btn').forEach(b=>b.addEventListener('click',()=>{const x=b.closest('.task-card').querySelector('.reveal'),open=x.classList.toggle('open');b.textContent=open?'Ausblenden':(b.closest('.task-card').querySelector('.task-number').textContent==='5'?'Hinweis anzeigen':'Lösung anzeigen')}));
+let quizQuestions=[];function randomInt(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function makeQuiz(){const b1=randomInt(3,9),n1=randomInt(25,180),b2=randomInt(3,8),n2=randomInt(20,150),b3=randomInt(2,6),n3=randomInt(30,160),b4=randomInt(7,12),base4=randomInt(3,10);quizQuestions=[{q:`Stelle ${n1} zur Basis ${b1} vollständig dar. Welche Ziffernfolge entsteht?`,a:toBase(n1,b1),n:n1,b:b1},{q:`Welche Dezimalzahl wird durch ${toBase(n2,b2)}_${b2} dargestellt?`,a:String(n2),n:n2,b:b2},{q:`Wandle ${toBase(n3,b3)}_${b3} in die Basis ${b4} um.`,a:toBase(n3,b4),n:n3,b:b3},{q:`Welchen Wert hat die dritte Spalte von rechts bei Basis ${base4}?`,a:String(base4*base4),n:base4*base4,b:base4}];quizGrid.innerHTML='';quizQuestions.forEach((x,i)=>{quizGrid.insertAdjacentHTML('beforeend',`<div class="quiz-item"><label for="quiz${i}">${i+1}. ${x.q}</label><div class="quiz-row"><input id="quiz${i}" autocomplete="off"><button class="tertiary quiz-use" data-i="${i}">Im Board prüfen</button></div><div class="quiz-feedback" id="feedback${i}"></div></div>`)});document.querySelectorAll('.quiz-use').forEach(b=>b.addEventListener('click',()=>{const x=quizQuestions[+b.dataset.i];loadTask(x.n,x.b)}));quizScore.textContent='0 von 4 richtig'}
+function norm(v){return v.toUpperCase().replace(/[^0-9A-F]/g,'')}
+checkQuiz.addEventListener('click',()=>{let score=0;quizQuestions.forEach((x,i)=>{const ok=norm(document.getElementById('quiz'+i).value)===norm(x.a),f=document.getElementById('feedback'+i);score+=ok;f.className='quiz-feedback '+(ok?'ok':'no');f.textContent=ok?'Richtig.':'Noch nicht. Richtige Antwort: '+x.a});quizScore.textContent=`${score} von 4 richtig`});newQuiz.addEventListener('click',makeQuiz);makeQuiz();
+
+render();
+</script>
+</body>
+</html>
