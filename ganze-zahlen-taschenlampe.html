@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Taschenlampen-Spiel</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: #111;
+    font-family: 'Segoe UI', sans-serif;
+    cursor: none;
+    min-height: 100vh;
+    padding: 24px 16px 48px;
+    user-select: none;
+  }
+  #flashlight {
+    position: fixed; top:0; left:0; width:100%; height:100%;
+    pointer-events: none; z-index: 1000;
+    background: radial-gradient(circle 140px at -999px -999px, transparent 0%, transparent 50%, rgba(0,0,0,0.97) 100%);
+  }
+  #header {
+    position: relative;
+    z-index: 1001;
+    pointer-events: none;
+  }
+  h1 { color:#fff; text-align:center; font-size:1.3em; margin-bottom:4px; }
+  #subtitle { color:#ccc; text-align:center; font-size:0.78em; margin-bottom:20px; }
+
+  /* ── GRID ── */
+  /* We use a CSS grid with explicit pixel sizes.
+     Columns: 130px task | 80px arrow | 130px task | ... (6 tasks, 5 arrows)
+     Rows:    60px task | 56px arrow | 60px task | ...  (4 tasks, 3 arrows)
+     Total cols: 6×130 + 5×80 = 780+400 = 1180px
+     Total rows: 4×60 + 3×56 = 240+168 = 408px            */
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(6, 130px) ;
+    grid-template-rows: repeat(4, 60px);
+    gap: 0;
+    width: fit-content;
+    margin: 0 auto;
+    /* We'll override with the full interleaved template below */
+  }
+
+  /* Full interleaved grid */
+  #board {
+    display: grid;
+    grid-template-columns: 130px 80px 130px 80px 130px 80px 130px 80px 130px 80px 130px;
+    grid-template-rows:    60px 80px 60px 80px 60px 80px 60px;
+    width: fit-content;
+    margin: 0 auto;
+  }
+
+  /* ── Task box ── */
+  .task {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #000;
+    background: #fff;
+    color: #000;
+    width: 130px;
+    height: 60px;
+  }
+  .task.start { border-width: 3px; }
+  .task.end   { border-width: 3px; border-style: double; }
+  .task-top {
+    background: #ddd;
+    font-size: 0.72em;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 1px solid #aaa;
+    padding: 1px 0;
+    min-height: 14px;
+    line-height: 14px;
+  }
+  .task-mid {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    padding: 0 6px;
+    gap: 4px;
+  }
+  .task-q { font-weight: bold; font-size: 0.82em; white-space: nowrap; }
+  .task-letter {
+    font-weight: bold; font-size: 1.05em;
+    border-left: 1px solid #ccc;
+    padding-left: 5px;
+    min-width: 18px;
+    text-align: center;
+  }
+
+  /* ── Horizontal arrow cell ── */
+  .arr-h {
+    width: 80px; height: 60px;
+    background: #fff8a0;
+    border-top: 1px solid #c8a000;
+    border-bottom: 1px solid #c8a000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ── Vertical arrow cell ── */
+  .arr-v {
+    width: 130px; height: 80px;
+    background: #fff8a0;
+    border-left: 1px solid #c8a000;
+    border-right: 1px solid #c8a000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    position: relative;
+  }
+  .arr-v .v-line {
+    width: 2px;
+    flex: 1;
+    background: #8a6800;
+    position: relative;
+  }
+  /* top arrowhead (pointing up) */
+  .arr-v .v-line-top::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 8px solid #8a6800;
+  }
+  /* bottom arrowhead (pointing down) */
+  .arr-v .v-line-bot::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 50%;
+    transform: translateX(-50%);
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 8px solid #8a6800;
+  }
+  .arr-v .v-num {
+    background: #fffce0;
+    border: 1px solid #c8a000;
+    border-radius: 4px;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+    white-space: nowrap;
+    z-index: 1;
+    line-height: 16px;
+  }
+
+  /* ── Corner cell ── */
+  .corner {
+    width: 80px; height: 80px;
+    background: transparent;
+  }
+
+  /* ── Solution area ── */
+  #bottom { margin-top: 32px; text-align: center; }
+  #sol-box {
+    display: inline-block; background: #fff;
+    border: 2px solid #000; padding: 14px 22px;
+    border-radius: 4px; color: #000;
+  }
+  #sol-box h3 { margin-bottom: 10px; font-size: 0.95em; }
+  #sol-input {
+    font-size: 1.1em; letter-spacing: 0.15em; padding: 5px 10px;
+    border: 2px solid #000; width: 200px; text-align: center;
+    text-transform: uppercase; margin-right: 6px; color: #000;
+  }
+  #check-btn { padding: 6px 14px; background: #000; color: #fff; border: none; font-size: 0.88em; cursor: pointer; border-radius: 3px; }
+  #result { margin-top: 8px; font-weight: bold; min-height: 20px; color: #000; }
+  #legend { color: #000; font-size: 0.72em; margin-top: 10px; }
+</style>
+</head>
+<body>
+<div id="flashlight"></div>
+<div id="header">
+<h1>🔦 Taschenlampen-Rätsel</h1>
+<div id="subtitle">Bewege die Maus wie eine Taschenlampe · Start bei ★ · An genau einem abgehenden Pfeil steht die richtige Lösung · Sammle die Buchstaben zur Lösungskombination · Die Kombination kannst du ganz unten überprüfen · Hinweis: Die Buchstabenkombination ergibt kein sinnvolles Wort!</div>
+</div>
+<div id="board"></div>
+
+<div id="bottom">
+  <div id="sol-box">
+    <h3>🔑 Lösungskombination überprüfen</h3>
+    <input type="text" id="sol-input" maxlength="14" placeholder="Dein Wort...">
+    <button id="check-btn" onclick="check()">Prüfen</button>
+    <div id="result"></div>
+  </div>
+  <div id="legend">★ = START &nbsp;|&nbsp; ✦ = ZIEL &nbsp;|&nbsp; Genau EIN abgehender Pfeil zeigt deine richtige Lösung – folge ihm und sammle die Buchstabenkombination!</div>
+</div>
+
+<script>
+const SOLUTION = "BQTMARIZKNEF";
+const pathCells   = [0,1,7,8,14,15,16,17,11,5,4,3];
+const pathLetters = "BQTMARIZKNEF".split('');
+
+const tasks = [
+  {q:"−4 + 17",     a:13,  wrongs:[ 21, -21, -13]},  // 0
+  {q:"−3−(−10)",    a:7,   wrongs:[-13,  13,  -7]},  // 1
+  {q:"−6×(−6)",     a:36,  wrongs:[-36, -12,  12]},  // 2
+  {q:"−9×(−8)",     a:72,  wrongs:[-72,  17, -17]},  // 3 ZIEL
+  {q:"−7 + 49",     a:42,  wrongs:[ 56, -56, -42]},  // 4
+  {q:"−56÷(−7)",    a:8,   wrongs:[ -8,  63, -63]},  // 5
+  {q:"−8 + 40",     a:32,  wrongs:[-32,  48, -48]},  // 6
+  {q:"−8×(−8)",     a:64,  wrongs:[-64,  16, -16]},  // 7
+  {q:"−37 + 100",   a:63,  wrongs:[137,-137, -63]},  // 8
+  {q:"−7×(−6)",     a:42,  wrongs:[-42,  13, -13]},  // 9
+  {q:"−81÷(−9)",    a:9,   wrongs:[ -9,  90, -90]},  // 10
+  {q:"−12 + 24",    a:12,  wrongs:[-12,  36, -36]},  // 11
+  {q:"−4 + 40",     a:36,  wrongs:[-36,  44, -44]},  // 12
+  {q:"−5×(−13)",    a:65,  wrongs:[-65, -18,  18]},  // 13
+  {q:"−32 + 100",   a:68,  wrongs:[132,-132, -68]},  // 14
+  {q:"−4 + 20",     a:16,  wrongs:[-16,  24, -24]},  // 15
+  {q:"−19 + 45",    a:26,  wrongs:[-26,  64, -64]},  // 16
+  {q:"−3 + 20",     a:17,  wrongs:[-17,  23, -23]},  // 17
+  {q:"−11×(−11)",   a:121, wrongs:[-121, 22, -22]},  // 18
+  {q:"−77 + 200",   a:123, wrongs:[277,-277,-123]},  // 19
+  {q:"−2×(−49)",    a:98,  wrongs:[-98,  47, -47]},  // 20
+  {q:"−13 + 26",    a:13,  wrongs:[-13,  39, -39]},  // 21
+  {q:"−8×(−15)",    a:120, wrongs:[-120, 23, -23]},  // 22
+  {q:"−16×(−8)",    a:128, wrongs:[-128, 24, -24]},  // 23
+];
+
+pathCells.forEach((ci,i) => tasks[ci].letter = pathLetters[i]);
+const offL = "XZPQVWFGIJLM".split('');
+let oi = 0;
+tasks.forEach(t => { if (!t.letter) t.letter = offL[oi++] || '?'; });
+tasks[0].label = "★ START";
+tasks[3].label = "✦ ZIEL";
+
+// Neighbors
+function nbrs(idx) {
+  const r = Math.floor(idx/6), c = idx%6, n = [];
+  if (c > 0) n.push(idx-1);
+  if (c < 5) n.push(idx+1);
+  if (r > 0) n.push(idx-6);
+  if (r < 3) n.push(idx+6);
+  return n;
+}
+
+// Correct neighbor per task
+const correctNbr = Array(24).fill(null);
+for (let i = 0; i < pathCells.length-1; i++) correctNbr[pathCells[i]] = pathCells[i+1];
+tasks.forEach((_,i) => { if (correctNbr[i] === null && nbrs(i).length) correctNbr[i] = nbrs(i)[0]; });
+
+// outNum[a][b] = number task a puts toward b
+const outNum = Array.from({length:24}, () => ({}));
+tasks.forEach((t,i) => {
+  let wi = 0;
+  nbrs(i).forEach(nb => {
+    outNum[i][nb] = (nb === correctNbr[i]) ? t.a : t.wrongs[wi++];
+  });
+});
+
+// One number per undirected connector: prefer path-source direction
+const pathEdgeSet = new Set();
+for (let i = 0; i < pathCells.length-1; i++) {
+  pathEdgeSet.add(pathCells[i]+'-'+pathCells[i+1]);
+}
+function connNum(a, b) {
+  if (pathEdgeSet.has(a+'-'+b)) return outNum[a][b];
+  if (pathEdgeSet.has(b+'-'+a)) return outNum[b][a];
+  return outNum[Math.min(a,b)][Math.max(a,b)];
+}
+
+// ── SVG helpers ──────────────────────────────────────
+function svgH(a, b) {
+  const n = connNum(a, b);
+  // Horizontal double arrow, 80×60, number in centre
+  return `<svg width="80" height="60" xmlns="http://www.w3.org/2000/svg" style="display:block">
+    <defs>
+      <marker id="rh${a}" markerWidth="7" markerHeight="6" refX="6" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6Z" fill="#8a6800"/></marker>
+      <marker id="lh${a}" markerWidth="7" markerHeight="6" refX="1" refY="3" orient="auto"><path d="M7,0 L0,3 L7,6Z" fill="#8a6800"/></marker>
+    </defs>
+    <line x1="7" y1="30" x2="73" y2="30" stroke="#8a6800" stroke-width="2"
+          marker-start="url(#lh${a})" marker-end="url(#rh${a})"/>
+    <rect x="25" y="16" width="30" height="18" rx="4" fill="#fffce0" stroke="#c8a000" stroke-width="1"/>
+    <text x="40" y="29" text-anchor="middle" dominant-baseline="middle"
+          font-size="12" font-weight="bold" fill="#000" font-family="Segoe UI,sans-serif">${n}</text>
+  </svg>`;
+}
+
+function svgV(a, b) {
+  const n = connNum(a, b);
+  return `<div class="v-line v-line-top"></div>
+    <div class="v-num">${n}</div>
+    <div class="v-line v-line-bot"></div>`;
+}
+
+// ── Build board ──────────────────────────────────────
+// Board grid: 11 cols × 7 rows (tasks at even indices, arrows at odd)
+// col indices: 0,2,4,6,8,10 = tasks; 1,3,5,7,9 = h-arrows
+// row indices: 0,2,4,6 = tasks; 1,3,5 = v-arrows
+const board = document.getElementById('board');
+
+for (let gr = 0; gr < 7; gr++) {
+  for (let gc = 0; gc < 11; gc++) {
+    const isTRow = gr % 2 === 0;
+    const isTCol = gc % 2 === 0;
+    const el = document.createElement('div');
+
+    if (isTRow && isTCol) {
+      // Task
+      const r = gr/2, c = gc/2, idx = r*6+c;
+      const t = tasks[idx];
+      const cls = 'task' + (t.label==='★ START' ? ' start' : t.label==='✦ ZIEL' ? ' end' : '');
+      el.className = cls;
+      el.innerHTML = `<div class="task-top">${t.label||'&nbsp;'}</div>
+        <div class="task-mid"><span class="task-q">${t.q} = ?</span><span class="task-letter">${t.letter}</span></div>`;
+
+    } else if (isTRow && !isTCol) {
+      // Horizontal arrow
+      const r = gr/2, lc = (gc-1)/2;
+      el.className = 'arr-h';
+      el.innerHTML = svgH(r*6+lc, r*6+lc+1);
+
+    } else if (!isTRow && isTCol) {
+      // Vertical arrow
+      const tr = (gr-1)/2, c = gc/2;
+      el.className = 'arr-v';
+      el.innerHTML = svgV(tr*6+c, (tr+1)*6+c);
+
+    } else {
+      // Corner
+      el.className = 'corner';
+    }
+
+    board.appendChild(el);
+  }
+}
+
+// ── Flashlight ───────────────────────────────────────
+const fl = document.getElementById('flashlight');
+document.addEventListener('mousemove', e => {
+  fl.style.background = `radial-gradient(circle 70px at ${e.clientX}px ${e.clientY}px, transparent 0%, transparent 50%, rgba(0,0,0,1) 100%)`;
+});
+
+// ── Solution check ────────────────────────────────────
+function check() {
+  const v = document.getElementById('sol-input').value.trim().toUpperCase();
+  const r = document.getElementById('result');
+  if (!v) { r.style.color='#000'; r.textContent='Bitte ein Wort eingeben.'; return; }
+  if (v === SOLUTION) { r.style.color='#005500'; r.textContent='🎉 Richtig! Hervorragend!'; }
+  else { r.style.color='#880000'; r.textContent='✗ Leider falsch – weiter suchen!'; }
+}
+document.getElementById('sol-input').addEventListener('keydown', e => { if (e.key==='Enter') check(); });
+</script>
+</body>
+</html>
