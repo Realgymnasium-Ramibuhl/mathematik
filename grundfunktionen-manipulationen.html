@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Standardfunktionen</title>
+<title>Standardfunktionen – Erkunden und Quiz v010</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -213,11 +213,168 @@
     color: var(--text-main);
     text-align: right;
   }
+
+  /* Navigation und Quiz */
+  .page-shell { max-width: 1500px; margin: 0 auto; }
+  .hero { display:flex; justify-content:space-between; align-items:center; gap:18px; margin-bottom:18px; padding:20px 22px; border:1px solid var(--border); border-radius:20px; background:linear-gradient(135deg,var(--bg-card),var(--accent-light)); box-shadow:0 12px 35px rgba(56,59,130,.10); }
+  .hero h1 { margin:0 0 5px; font-size:clamp(21px,3vw,30px); font-weight:750; }
+  .hero p { color:var(--text-muted); font-size:13px; line-height:1.5; }
+  .mode-switch,.quiz-kind { display:flex; flex-wrap:wrap; gap:8px; }
+  .mode-btn,.quiz-kind-btn,.action-btn { border:1px solid var(--border); color:var(--text-main); background:var(--bg-card); padding:10px 14px; border-radius:999px; font:600 12px var(--font-sans); cursor:pointer; transition:.18s ease; }
+  .mode-btn:hover,.quiz-kind-btn:hover,.action-btn:hover { transform:translateY(-1px); box-shadow:0 7px 18px rgba(56,59,130,.12); }
+  .mode-btn.active,.quiz-kind-btn.active,.action-btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  #learnView[hidden],#quizView[hidden] { display:none; }
+  #quizView { max-width:1050px; margin:0 auto; }
+  .quiz-progress-card { position:sticky; top:10px; z-index:5; padding:14px 16px; margin-bottom:14px; border:1px solid var(--border); border-radius:16px; background:color-mix(in srgb,var(--bg-card) 94%,transparent); backdrop-filter:blur(9px); box-shadow:0 8px 24px rgba(56,59,130,.10); }
+  .progress-copy { display:flex; justify-content:space-between; gap:15px; margin-bottom:8px; font-size:12px; font-weight:650; }
+  .progress-track { height:12px; overflow:hidden; border-radius:20px; background:var(--bg-meta); }
+  .progress-fill { height:100%; width:0; border-radius:inherit; background:linear-gradient(90deg,#5059D5,#8b5cf6,#ec4899); transition:width .35s ease; }
+  .quiz-toolbar { display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 14px; }
+  .quiz-card { position:relative; overflow:hidden; border:1px solid var(--border); border-radius:22px; background:var(--bg-card); box-shadow:0 18px 50px rgba(56,59,130,.12); padding:clamp(17px,3vw,30px); }
+  .quiz-eyebrow { color:var(--accent); font-size:11px; font-weight:800; letter-spacing:.09em; text-transform:uppercase; }
+  .quiz-card h2 { margin:7px 0 5px; font-size:clamp(19px,3vw,27px); }
+  .quiz-instruction { color:var(--text-muted); font-size:13px; line-height:1.55; margin-bottom:18px; }
+  .quiz-layout { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(250px,.65fr); gap:20px; align-items:start; }
+  .quiz-visual { padding:12px; border-radius:16px; background:var(--bg-meta); }
+  .quiz-visual canvas { height:390px; background:var(--bg-meta); }
+  .fixed-equation { display:flex; align-items:center; justify-content:center; min-height:86px; margin-bottom:14px; padding:14px; border:1px solid var(--border); border-radius:14px; background:var(--accent-light); font:700 clamp(15px,2.5vw,22px) var(--font-mono); text-align:center; word-break:break-word; }
+  .answer-panel { padding:16px; border-radius:16px; background:var(--bg-meta); }
+  .answer-panel h3 { font-size:14px; margin-bottom:12px; }
+  .param-input-row,.quiz-slider-row { display:grid; grid-template-columns:36px 1fr 58px; gap:9px; align-items:center; margin:9px 0; }
+  .param-symbol { display:grid; place-items:center; width:32px; height:32px; border-radius:10px; background:var(--accent-light); color:var(--accent); font:800 14px var(--font-mono); }
+  .param-input-row input[type=number] { min-width:0; width:100%; border:1px solid var(--border); border-radius:10px; padding:9px 10px; background:var(--bg-card); color:var(--text-main); font:600 13px var(--font-mono); }
+  .quiz-slider-row input { width:100%; accent-color:var(--accent); }
+  .quiz-value { text-align:right; color:var(--text-muted); font:600 12px var(--font-mono); }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:15px; }
+  .feedback { min-height:44px; margin-top:12px; padding:11px 13px; border-radius:11px; font-size:12.5px; line-height:1.5; color:var(--text-muted); }
+  .feedback.success { background:rgba(35,170,95,.12); color:#168347; }
+  .feedback.error { background:rgba(222,65,79,.12); color:#c02f40; }
+  .finish-panel { display:none; text-align:center; padding:45px 20px; }
+  .finish-panel.show { display:block; }
+  .medal { font-size:82px; animation:medal-pop .65s ease; }
+  .spark { position:absolute; top:-30px; pointer-events:none; animation:spark-fall linear forwards; }
+  @keyframes medal-pop { 0%{transform:scale(.2) rotate(-20deg)} 75%{transform:scale(1.15)} 100%{transform:scale(1)} }
+  @keyframes spark-fall { to { transform:translateY(650px) rotate(650deg); opacity:0; } }
+  @media(max-width:760px){ .hero{align-items:flex-start;flex-direction:column}.quiz-layout{grid-template-columns:1fr}.quiz-visual canvas{height:300px}.progress-copy{font-size:11px}.quiz-progress-card{top:4px} }
+
+
+  /* v003: klare, sichtbar neue Gestaltung */
+  :root { --accent:#5b4fe8; --accent-2:#14b8a6; --warm:#ffb703; --danger:#e84a5f; --shadow:0 18px 50px rgba(38,35,92,.14); }
+  body { padding:0; background:radial-gradient(circle at 8% 0%,#dcd7ff 0,transparent 32%),radial-gradient(circle at 95% 8%,#c8fff4 0,transparent 27%),var(--bg-page); }
+  .page-shell { max-width:none; }
+  .hero { margin:0; border:0; border-radius:0; min-height:210px; padding:34px clamp(20px,5vw,72px); color:#fff; background:linear-gradient(125deg,#342c8f 0%,#6357e8 52%,#14a99b 100%); box-shadow:0 16px 42px rgba(39,34,115,.28); position:relative; overflow:hidden; }
+  .hero::after { content:'ƒ(x)'; position:absolute; right:5%; top:-34px; font:800 clamp(120px,20vw,250px)/1 var(--font-mono); opacity:.09; transform:rotate(-8deg); }
+  .hero h1,.hero p { color:#fff; position:relative; z-index:1; }
+  .hero h1 { font-size:clamp(28px,4vw,46px); letter-spacing:-.04em; }
+  .hero p { max-width:650px; font-size:15px; opacity:.88; }
+  .hero-copy { max-width:760px; }
+  .mode-switch { position:relative; z-index:2; padding:7px; border-radius:16px; background:rgba(255,255,255,.16); backdrop-filter:blur(8px); }
+  .mode-btn { min-width:150px; padding:14px 18px; border:0; border-radius:11px; color:#fff; background:transparent; font-size:14px; }
+  .mode-btn.active { color:#342c8f; background:#fff; box-shadow:0 8px 18px rgba(25,22,80,.18); }
+  #learnView,#quizView { padding:30px clamp(14px,4vw,58px) 56px; }
+  #learnView .grid { gap:20px; }
+  .intro { background:linear-gradient(150deg,#111827,#273469); box-shadow:var(--shadow); min-height:100%; }
+  .card { border:0; box-shadow:0 10px 30px rgba(42,38,100,.09); padding:16px; transition:transform .2s,box-shadow .2s; }
+  .card:hover { transform:translateY(-3px); box-shadow:var(--shadow); }
+  .card canvas { height:175px; }
+  .fn-title { font-size:13px; font-weight:750; }
+  .dot { width:9px; height:9px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); }
+  #quizView { max-width:1220px; }
+  .quiz-progress-card { top:8px; border:0; border-radius:19px; box-shadow:var(--shadow); padding:17px 20px; }
+  .progress-track { height:14px; }
+  .progress-fill { background:linear-gradient(90deg,var(--accent-2),#5ee6b4,var(--warm)); }
+  .quiz-toolbar { margin:20px 0 16px; padding:14px; border-radius:18px; background:rgba(255,255,255,.6); border:1px solid var(--border); }
+  .quiz-kind-btn { padding:13px 18px; border-radius:12px; font-size:13px; }
+  .quiz-kind-btn.active { background:linear-gradient(135deg,var(--accent),#7b61ff); }
+  .quiz-card { border:0; border-radius:28px; box-shadow:0 25px 70px rgba(38,35,92,.18); }
+  .quiz-visual { padding:15px; border:1px solid var(--border); border-radius:20px; box-shadow:inset 0 0 0 1px rgba(255,255,255,.5); }
+  .quiz-visual canvas { height:430px; }
+  .param-input,.quiz-slider-row { border:1px solid var(--border); border-radius:12px; background:var(--bg-meta); padding:10px; }
+  .action-btn.primary { padding:13px 20px; border-radius:12px; background:linear-gradient(135deg,var(--accent),#7b61ff); box-shadow:0 9px 20px rgba(91,79,232,.25); }
+  .finish-panel { background:linear-gradient(135deg,#fff6ce,#fff 50%,#d8fff7); }
+  @media(max-width:760px){.hero{min-height:0;padding:26px 18px}.mode-switch{width:100%}.mode-btn{flex:1;min-width:0}#learnView,#quizView{padding:18px 10px 40px}.quiz-visual canvas{height:310px}}
+
+
+  .answer-group { margin:14px 0; padding:14px; border:1px solid var(--border); border-radius:15px; background:var(--bg-meta); }
+  .answer-group h3 { margin:0 0 5px; font-size:14px; color:var(--accent); }
+  .answer-group p { margin:0 0 10px; color:var(--text-muted); font-size:11px; line-height:1.4; }
+  .param-input-row { grid-template-columns:95px 1fr 82px; }
+  .quiz-slider-row { grid-template-columns:95px 1fr 82px; }
+  .param-symbol { font-weight:800; }
+  .second-chance { border-color:#f2b84b; background:color-mix(in srgb,#fff4ce 65%,var(--bg-card)); }
+
+  .trig-note{margin-bottom:14px;padding:12px 14px;border-left:4px solid var(--accent-2);border-radius:10px;background:var(--accent-light);font-size:12px;line-height:1.55}
+
+  .ground-function{margin:0 0 18px;padding:18px 20px;border-radius:18px;background:linear-gradient(135deg,var(--accent-light),color-mix(in srgb,var(--accent-2) 18%,var(--bg-card)));border:2px solid color-mix(in srgb,var(--accent) 35%,transparent);text-align:center}
+  .ground-function small{display:block;margin-bottom:7px;color:var(--text-muted);font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+  .ground-function strong{font:800 clamp(19px,3vw,29px) var(--font-mono);color:var(--text-main)}
+  .named-control{display:block;font-size:12px;font-weight:750;line-height:1.25;color:var(--text-main)}
+  .range-prompt{margin:4px 0 18px;font-size:clamp(21px,3vw,30px)}
+  .range-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:18px}
+  .range-option{min-height:64px;padding:13px;border:2px solid var(--border);border-radius:14px;background:var(--bg-card);color:var(--text-main);font:700 15px var(--font-mono);cursor:pointer;transition:.18s}
+  .range-option:hover{transform:translateY(-2px);border-color:var(--accent)}
+  .range-option.correct{border-color:#22a860;background:rgba(34,168,96,.12)}
+  .range-option.wrong{border-color:var(--danger);background:rgba(232,74,95,.12)}
+  .source-equation{display:flex;align-items:center;justify-content:center;min-height:210px;padding:24px;border-radius:18px;background:var(--bg-meta);font:800 clamp(19px,3vw,29px) var(--font-mono);text-align:center}
+  @media(max-width:560px){.range-options{grid-template-columns:1fr}}
+
+  .math-display{overflow-x:auto;overflow-y:hidden;padding:3px 1px}
+  .fn-eq .katex,.ground-function .katex,.fixed-equation .katex,.source-equation .katex{font-size:1.12em}
+  .range-option .katex{font-size:1.08em}
+  .target-formula{margin:0 0 18px;padding:18px 20px;border-radius:18px;background:linear-gradient(135deg,var(--accent-light),color-mix(in srgb,var(--accent-2) 18%,var(--bg-card)));border:2px solid color-mix(in srgb,var(--accent) 35%,transparent);text-align:center}
+  .target-formula small{display:block;margin-bottom:8px;color:var(--text-muted);font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase}
+  .target-formula .katex{font-size:clamp(1.18em,2.8vw,1.65em)}
+  .quiz-work-graph{padding:14px;border:1px solid var(--border);border-radius:20px;background:var(--bg-meta)}
+  .quiz-work-graph canvas{width:100%;height:420px}
+  .guide-note{margin:10px 0 0;color:var(--text-muted);font-size:12px;line-height:1.5}
+  .guide-key{display:inline-block;width:22px;border-top:2px dashed #ef8354;vertical-align:middle;margin:0 5px}
+  @media(max-width:760px){.quiz-work-graph canvas{height:320px}}
 </style>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
 </head>
 <body>
 
-<div class="grid" id="grid"></div>
+<div class="page-shell">
+  <header class="hero">
+    <div class="hero-copy">
+      <h1>Funktionen verändern. Wirkung verstehen.</h1>
+      <p>Erkunde Parameter frei oder wechsle ins Quiz und sammle mit richtigen Serien 50 Punkte.</p>
+    </div>
+    <nav class="mode-switch" aria-label="Modus wählen">
+      <button type="button" class="mode-btn active" data-view="learn">Erkunden</button>
+      <button type="button" class="mode-btn" data-view="quiz">Quiz starten</button>
+    </nav>
+  </header>
+  <main>
+    <section id="learnView">
+      <div class="grid" id="grid"></div>
+    </section>
+    <section id="quizView" hidden>
+      <div class="quiz-progress-card">
+        <div class="progress-copy"><strong id="scoreText">0 von 50 Punkten</strong><span id="streakText">Serie: 0 · nächster Treffer: +1</span></div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+      </div>
+      <div class="quiz-toolbar">
+        <div class="quiz-kind" aria-label="Quizart wählen">
+          <button type="button" class="quiz-kind-btn active" data-kind="graph">Graph → Parameter</button>
+          <button type="button" class="quiz-kind-btn" data-kind="equation">Gleichung → Graph</button>
+          <button type="button" class="quiz-kind-btn" data-kind="domainRange">Definitions- und Wertebereich</button>
+        </div>
+        <button type="button" class="action-btn" id="newTaskBtn">Neue Aufgabe</button>
+      </div>
+      <article class="quiz-card" id="quizCard">
+        <div id="taskArea"></div>
+        <div class="finish-panel" id="finishPanel">
+          <div class="medal">🏅</div>
+          <h2>50 Punkte geschafft!</h2>
+          <p>Du hast Manipulationen sowie Definitions- und Wertebereiche sicher bestimmt.</p>
+          <button type="button" class="action-btn primary" id="restartQuiz">Neues Quiz starten</button>
+        </div>
+      </article>
+    </section>
+  </main>
+</div>
 
 <script>
 const ACCENT_LIGHT = "#5059D5";
@@ -226,7 +383,7 @@ const PAD_L = 30, PAD_R = 12, PAD_T = 10, PAD_B = 22;
 const fns = [
   {
     id: "linear", title: "Lineare Funktion", trig: false,
-    params: { m: { min: -3, max: 3, step: 0.1, val: 1 }, q: { min: -5, max: 5, step: 0.1, val: 0 } },
+    params: { m: { min: -3, max: 3, step: 1, val: 1 }, q: { min: -5, max: 5, step: 1, val: 0 } },
     f: (x, p) => p.m * x + p.q,
     eq:    p => `f(x) = ${F(p.m)}·x + ${F(p.q)}`,
     def:   p => "ℝ",
@@ -235,8 +392,8 @@ const fns = [
     xR: [-7, 7], yR: [-6, 6]
   },
   {
-    id: "pow_ep", title: "Potenz (ger., pos.)", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, n: { min: 2, max: 8, step: 2, val: 2 }, d: { min: -4, max: 4, step: 0.1, val: 0 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    id: "pow_ep", title: "Potenzfunktion (positiver Exponent)", trig: false,
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, n: { min: 2, max: 8, step: 1, val: 2 }, d: { min: -4, max: 4, step: 1, val: 0 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => p.a * Math.pow(x + p.d, p.n) + p.e,
     eq:    p => `f(x) = ${F(p.a)}·(x+${F(p.d)})^${p.n} + ${F(p.e)}`,
     def:   p => "ℝ",
@@ -245,8 +402,8 @@ const fns = [
     xR: [-6, 6], yR: [-6, 8]
   },
   {
-    id: "pow_op", title: "Potenz (unger., pos.)", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, n: { min: 1, max: 7, step: 2, val: 3 }, d: { min: -4, max: 4, step: 0.1, val: 0 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    id: "pow_op", title: "Potenzfunktion (positiver Exponent)", trig: false,
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, n: { min: 1, max: 7, step: 1, val: 3 }, d: { min: -4, max: 4, step: 1, val: 0 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => p.a * Math.pow(x + p.d, p.n) + p.e,
     eq:    p => `f(x) = ${F(p.a)}·(x+${F(p.d)})^${p.n} + ${F(p.e)}`,
     def:   p => "ℝ",
@@ -255,8 +412,8 @@ const fns = [
     xR: [-6, 6], yR: [-8, 8]
   },
   {
-    id: "pow_en", title: "Potenz (ger., neg.)", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, n: { min: 2, max: 8, step: 2, val: 2 }, d: { min: -4, max: 4, step: 0.1, val: 0 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    id: "pow_en", title: "Potenzfunktion (negativer Exponent)", trig: false,
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, n: { min: 2, max: 8, step: 1, val: 2 }, d: { min: -4, max: 4, step: 1, val: 0 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => { let v = x + p.d; return v === 0 ? NaN : p.a * Math.pow(v, -p.n) + p.e; },
     eq:    p => `f(x) = ${F(p.a)}·(x+${F(p.d)})^-${p.n} + ${F(p.e)}`,
     def:   p => `ℝ \\ {${F(-p.d)}}`,
@@ -265,8 +422,8 @@ const fns = [
     xR: [-6, 6], yR: [-6, 6]
   },
   {
-    id: "pow_on", title: "Potenz (unger., neg.)", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, n: { min: 1, max: 7, step: 2, val: 1 }, d: { min: -4, max: 4, step: 0.1, val: 0 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    id: "pow_on", title: "Potenzfunktion (negativer Exponent)", trig: false,
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, n: { min: 1, max: 7, step: 1, val: 1 }, d: { min: -4, max: 4, step: 1, val: 0 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => { let v = x + p.d; return v === 0 ? NaN : p.a * Math.pow(v, -p.n) + p.e; },
     eq:    p => `f(x) = ${F(p.a)}·(x+${F(p.d)})^-${p.n} + ${F(p.e)}`,
     def:   p => `ℝ \\ {${F(-p.d)}}`,
@@ -276,7 +433,7 @@ const fns = [
   },
   {
     id: "exp", title: "Exponentialfunktion", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, b: { min: 0.1, max: 5, step: 0.1, val: 2.72 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, b: { min: 2, max: 5, step: 1, val: 2 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => p.a * Math.pow(Math.abs(p.b), x) + p.e,
     eq:    p => `f(x) = ${F(p.a)}·${F(p.b)}^x + ${F(p.e)}`,
     def:   p => "ℝ",
@@ -286,7 +443,7 @@ const fns = [
   },
   {
     id: "log", title: "Logarithmusfunktion", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, b: { min: 0.2, max: 5, step: 0.1, val: 2.72 }, d: { min: -4, max: 4, step: 0.1, val: 0 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, b: { min: 2, max: 5, step: 1, val: 2 }, d: { min: -4, max: 4, step: 1, val: 0 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => { let v = x + p.d; return v <= 0 ? NaN : p.a * (Math.log(v) / Math.log(Math.abs(p.b))) + p.e; },
     eq:    p => `f(x) = ${F(p.a)}·log_${F(p.b)}(x+${F(p.d)}) + ${F(p.e)}`,
     def:   p => `(${F(-p.d)}, ∞)`,
@@ -296,7 +453,7 @@ const fns = [
   },
   {
     id: "sqrt", title: "Wurzelfunktion", trig: false,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, d: { min: -4, max: 4, step: 0.1, val: 0 }, e: { min: -4, max: 4, step: 0.1, val: 0 } },
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, d: { min: -4, max: 4, step: 1, val: 0 }, e: { min: -4, max: 4, step: 1, val: 0 } },
     f: (x, p) => { let v = x + p.d; return v < 0 ? NaN : p.a * Math.sqrt(v) + p.e; },
     eq:    p => `f(x) = ${F(p.a)}·√(x+${F(p.d)}) + ${F(p.e)}`,
     def:   p => `[${F(-p.d)}, ∞)`,
@@ -306,9 +463,9 @@ const fns = [
   },
   {
     id: "sin", title: "Sinusfunktion", trig: true,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, b: { min: 0.2, max: 4, step: 0.1, val: 1 }, d: { min: -4, max: 4, step: 0.25, val: 0 }, e: { min: -3, max: 3, step: 0.1, val: 0 } },
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, b: { min: 1, max: 4, step: 1, val: 1 }, d: { min: -2*Math.PI, max: 2*Math.PI, step: Math.PI/2, val: 0 }, e: { min: -3, max: 3, step: 1, val: 0 } },
     f: (x, p) => p.a * Math.sin(p.b * (x + p.d)) + p.e,
-    eq:    p => `f(x) = ${F(p.a)}·sin(${F(p.b)}·(x+${F(p.d)})) + ${F(p.e)}`,
+    eq:    p => `f(x) = ${F(p.a)}·sin(${F(p.b)}·(x+${PI(p.d)})) + ${F(p.e)}`,
     def:   p => "ℝ",
     range: p => `[${F(p.e - Math.abs(p.a))}, ${F(p.e + Math.abs(p.a))}]`,
     asy:   p => "—",
@@ -316,9 +473,9 @@ const fns = [
   },
   {
     id: "cos", title: "Cosinusfunktion", trig: true,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, b: { min: 0.2, max: 4, step: 0.1, val: 1 }, d: { min: -4, max: 4, step: 0.25, val: 0 }, e: { min: -3, max: 3, step: 0.1, val: 0 } },
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, b: { min: 1, max: 4, step: 1, val: 1 }, d: { min: -2*Math.PI, max: 2*Math.PI, step: Math.PI/2, val: 0 }, e: { min: -3, max: 3, step: 1, val: 0 } },
     f: (x, p) => p.a * Math.cos(p.b * (x + p.d)) + p.e,
-    eq:    p => `f(x) = ${F(p.a)}·cos(${F(p.b)}·(x+${F(p.d)})) + ${F(p.e)}`,
+    eq:    p => `f(x) = ${F(p.a)}·cos(${F(p.b)}·(x+${PI(p.d)})) + ${F(p.e)}`,
     def:   p => "ℝ",
     range: p => `[${F(p.e - Math.abs(p.a))}, ${F(p.e + Math.abs(p.a))}]`,
     asy:   p => "—",
@@ -326,9 +483,9 @@ const fns = [
   },
   {
     id: "tan", title: "Tangensfunktion", trig: true,
-    params: { a: { min: -3, max: 3, step: 0.1, val: 1 }, b: { min: 0.2, max: 4, step: 0.1, val: 1 }, d: { min: -4, max: 4, step: 0.25, val: 0 }, e: { min: -3, max: 3, step: 0.1, val: 0 } },
+    params: { a: { min: -3, max: 3, step: 1, val: 1 }, b: { min: 1, max: 4, step: 1, val: 1 }, d: { min: -2*Math.PI, max: 2*Math.PI, step: Math.PI/2, val: 0 }, e: { min: -3, max: 3, step: 1, val: 0 } },
     f: (x, p) => { let v = Math.tan(p.b * (x + p.d)); return Math.abs(v) > 80 ? NaN : p.a * v + p.e; },
-    eq:    p => `f(x) = ${F(p.a)}·tan(${F(p.b)}·(x+${F(p.d)})) + ${F(p.e)}`,
+    eq:    p => `f(x) = ${F(p.a)}·tan(${F(p.b)}·(x+${PI(p.d)})) + ${F(p.e)}`,
     def:   p => `ℝ \\ {π/(2b) + kπ/b − d}`,
     range: p => "ℝ",
     asy:   p => "x = π/(2b) + kπ/b − d,  k ∈ ℤ",
@@ -337,6 +494,73 @@ const fns = [
 ];
 
 function F(v) { return parseFloat(v.toFixed(2)); }
+function PI(v) {
+  const c = Math.round((v / Math.PI) * 2) / 2;
+  if (Math.abs(c) < 1e-9) return "0";
+  const sign = c < 0 ? "−" : "";
+  const a = Math.abs(c);
+  if (a === 1) return sign + "π";
+  if (a === 0.5) return sign + "0.5π";
+  return sign + F(a) + "π";
+}
+
+function numTex(v){
+  const n=F(v); return n<0?`(${n})`:`${n}`;
+}
+function signedTex(v){ return v<0?`- ${Math.abs(F(v))}`:`+ ${F(v)}`; }
+function equationTex(fn,p,name="f"){
+  const a=F(p.a??1), d=F(p.d??0), e=F(p.e??0);
+  if(fn.id==="linear")return `${name}(x)=${F(p.m)}x ${signedTex(p.q)}`;
+  if(fn.id.startsWith("pow_")){
+    const exponent=(fn.id.endsWith("n")?"-":"")+F(p.n);
+    return `${name}(x)=${a}\\left(x ${signedTex(d)}\\right)^{${exponent}} ${signedTex(e)}`;
+  }
+  if(fn.id==="exp")return `${name}(x)=${a}\\cdot ${F(p.b)}^{x} ${signedTex(e)}`;
+  if(fn.id==="log")return `${name}(x)=${a}\\cdot\\log_{${F(p.b)}}\\left(x ${signedTex(d)}\\right) ${signedTex(e)}`;
+  if(fn.id==="sqrt")return `${name}(x)=${a}\\sqrt{x ${signedTex(d)}} ${signedTex(e)}`;
+  if(fn.id==="sin"||fn.id==="cos"){
+    const op=fn.id==="sin"?"\\sin":"\\cos";
+    const shift=piCoefficientTex(p.d);
+    return `${name}(x)=${a}\\cdot${op}\\left(${F(p.b)}\\left(x ${shift}\\right)\\right) ${signedTex(e)}`;
+  }
+  return String(fn.eq(p));
+}
+function piCoefficientTex(v){
+  const c=Math.round(v/Math.PI*2)/2;
+  if(Math.abs(c)<1e-9)return "+ 0";
+  const sign=c<0?"-":"+",a=Math.abs(c);
+  if(a===1)return `${sign} \\pi`;
+  return `${sign} ${F(a)}\\pi`;
+}
+function groundTex(fn,target){
+  const p=baseParams(fn,target);
+  if(fn.id==="linear")return "g(x)=x";
+  if(fn.id.startsWith("pow_"))return `g(x)=x^{${fn.id.endsWith("n")?"-":""}${F(p.n)}}`;
+  if(fn.id==="exp")return `g(x)=${F(p.b)}^x`;
+  if(fn.id==="log")return `g(x)=\\log_{${F(p.b)}}(x)`;
+  if(fn.id==="sqrt")return "g(x)=\\sqrt{x}";
+  if(fn.id==="sin")return "g(x)=\\sin(x)";
+  if(fn.id==="cos")return "g(x)=\\cos(x)";
+  return "";
+}
+function rangeTex(raw){
+  let t=String(raw).trim();
+  if(t==="ℝ")return "\\mathbb{R}";
+  if(t==="—")return "\\text{keine}";
+  t=t.replaceAll("∞","\\infty").replaceAll("−","-");
+  t=t.replace(/^ℝ\s*\\+\s*\{([^}]+)\}$/,"\\mathbb{R}\\setminus\\{$1\\}");
+  t=t.replace(/\)\s*\\+\s*\{[^}]+\}$/,")");
+  t=t.replace(/\]\s*\\+\s*\{[^}]+\}$/,"]");
+  return t;
+}
+function renderLatex(el,tex,display=false){
+  if(!el)return;
+  if(window.katex){katex.render(tex,el,{throwOnError:false,displayMode:display});}
+  else{el.textContent=tex;}
+}
+function renderMathNodes(root=document){
+  root.querySelectorAll("[data-tex]").forEach(el=>renderLatex(el,decodeURIComponent(el.dataset.tex),el.dataset.display==="true"));
+}
 
 function getVals(fn, card) {
   const p = {};
@@ -362,9 +586,16 @@ function drawGraph(fn, canvas, p) {
   const ctx = canvas.getContext("2d");
   ctx.scale(dpr, dpr);
 
-  const [xMin, xMax] = fn.xR, [yMin, yMax] = fn.yR;
-  const pl = PAD_L, pr = PAD_R, pt = PAD_T, pb = PAD_B;
+  let [xMin, xMax] = fn.xR, [yMin, yMax] = fn.yR;
+  const pl = PAD_L + 10, pr = PAD_R + 6, pt = PAD_T + 8, pb = PAD_B + 10;
   const cw = W - pl - pr, ch = H - pt - pb;
+  const inQuiz = Boolean(canvas.closest && canvas.closest("#quizView"));
+  if (inQuiz && !fn.trig) {
+    const xMid=(xMin+xMax)/2, yMid=(yMin+yMax)/2;
+    const unitsPerPixel=Math.max((xMax-xMin)/cw,(yMax-yMin)/ch);
+    const xSpan=unitsPerPixel*cw, ySpan=unitsPerPixel*ch;
+    xMin=xMid-xSpan/2; xMax=xMid+xSpan/2; yMin=yMid-ySpan/2; yMax=yMid+ySpan/2;
+  }
 
   function tx(x) { return pl + ((x - xMin) / (xMax - xMin)) * cw; }
   function ty(y) { return pt + ((yMax - y) / (yMax - yMin)) * ch; }
@@ -374,7 +605,7 @@ function drawGraph(fn, canvas, p) {
   ctx.fillStyle = col.bg;
   ctx.fillRect(0, 0, W, H);
 
-  ctx.strokeStyle = col.grid; ctx.lineWidth = 0.5;
+  ctx.strokeStyle = inQuiz ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "rgba(225,225,255,.22)" : "rgba(52,58,110,.20)") : col.grid; ctx.lineWidth = inQuiz ? 1 : 0.5;
   if (fn.trig) {
     const step = Math.PI / 2;
     for (let k = Math.ceil(xMin / step); k <= Math.floor(xMax / step); k++) {
@@ -389,14 +620,14 @@ function drawGraph(fn, canvas, p) {
     ctx.beginPath(); ctx.moveTo(pl, ty(gy)); ctx.lineTo(pl + cw, ty(gy)); ctx.stroke();
   }
 
-  ctx.strokeStyle = col.axis; ctx.lineWidth = 1;
+  ctx.strokeStyle = col.axis; ctx.lineWidth = inQuiz ? 2 : 1;
   const y0 = ty(0);
   if (y0 >= pt && y0 <= pt + ch) { ctx.beginPath(); ctx.moveTo(pl, y0); ctx.lineTo(pl + cw, y0); ctx.stroke(); }
   const x0 = tx(0);
   if (x0 >= pl && x0 <= pl + cw) { ctx.beginPath(); ctx.moveTo(x0, pt); ctx.lineTo(x0, pt + ch); ctx.stroke(); }
 
   ctx.fillStyle = col.axis;
-  ctx.font = `9px ${getComputedStyle(document.body).fontFamily || 'sans-serif'}`;
+  ctx.font = `${inQuiz ? 12 : 9}px ${getComputedStyle(document.body).fontFamily || 'sans-serif'}`;
   ctx.textAlign = "center";
 
   if (fn.trig) {
@@ -433,13 +664,40 @@ function drawGraph(fn, canvas, p) {
   ctx.stroke();
 }
 
+
+function drawQuizGuides(fn,canvas,p){
+  if(!canvas)return;
+  const dpr=window.devicePixelRatio||1,W=canvas.clientWidth,H=canvas.clientHeight,ctx=canvas.getContext("2d");
+  let [xMin,xMax]=fn.xR,[yMin,yMax]=fn.yR;
+  const pl=PAD_L+10,pr=PAD_R+6,pt=PAD_T+8,pb=PAD_B+10,cw=W-pl-pr,ch=H-pt-pb;
+  if(!fn.trig){const xm=(xMin+xMax)/2,ym=(yMin+yMax)/2,u=Math.max((xMax-xMin)/cw,(yMax-yMin)/ch),xs=u*cw,ys=u*ch;xMin=xm-xs/2;xMax=xm+xs/2;yMin=ym-ys/2;yMax=ym+ys/2;}
+  const tx=x=>pl+(x-xMin)/(xMax-xMin)*cw,ty=y=>pt+(yMax-y)/(yMax-yMin)*ch;
+  ctx.save();ctx.setTransform(dpr,0,0,dpr,0,0);ctx.strokeStyle="#ef8354";ctx.fillStyle="#ef8354";ctx.lineWidth=2;ctx.setLineDash([7,6]);
+  const vline=x=>{if(x<xMin||x>xMax)return;ctx.beginPath();ctx.moveTo(tx(x),pt);ctx.lineTo(tx(x),pt+ch);ctx.stroke();};
+  const hline=y=>{if(y<yMin||y>yMax)return;ctx.beginPath();ctx.moveTo(pl,ty(y));ctx.lineTo(pl+cw,ty(y));ctx.stroke();};
+  if(fn.id==="exp")hline(p.e);
+  if(fn.id==="log")vline(-p.d);
+  if(fn.id==="pow_en"||fn.id==="pow_on"){vline(-p.d);hline(p.e);}
+  ctx.setLineDash([]);
+  let pts=[];
+  if(fn.id==="linear")pts=[[0,p.q],[1,fn.f(1,p)]];
+  else if(fn.id.startsWith("pow_"))pts=[[-p.d,p.e],[-p.d+1,fn.f(-p.d+1,p)]];
+  else if(fn.id==="exp")pts=[[0,fn.f(0,p)],[1,fn.f(1,p)]];
+  else if(fn.id==="log")pts=[[-p.d+1,p.e],[-p.d+p.b,fn.f(-p.d+p.b,p)]];
+  else if(fn.id==="sqrt")pts=[[-p.d,p.e],[-p.d+1,fn.f(-p.d+1,p)]];
+  else if(fn.id==="sin")pts=[[-p.d,p.e],[-p.d+Math.PI/(2*p.b),p.e+p.a]];
+  else if(fn.id==="cos")pts=[[-p.d,p.e+p.a],[-p.d+Math.PI/(2*p.b),p.e]];
+  pts.filter(([x,y])=>Number.isFinite(x)&&Number.isFinite(y)&&x>=xMin&&x<=xMax&&y>=yMin&&y<=yMax).forEach(([x,y])=>{ctx.beginPath();ctx.arc(tx(x),ty(y),5,0,Math.PI*2);ctx.fill();ctx.strokeStyle=getColors().card;ctx.lineWidth=2;ctx.stroke();});
+  ctx.restore();
+}
+
 function updateCard(fn, card) {
   const p = getVals(fn, card);
   drawGraph(fn, card.querySelector("canvas"), p);
-  card.querySelector(".fn-eq").textContent = fn.eq(p);
-  card.querySelector(".def-val").textContent = fn.def(p);
-  card.querySelector(".range-val").textContent = fn.range(p);
-  card.querySelector(".asy-val").textContent = fn.asy(p);
+  renderLatex(card.querySelector(".fn-eq"), equationTex(fn,p));
+  renderLatex(card.querySelector(".def-val"),rangeTex(fn.def(p)));
+  renderLatex(card.querySelector(".range-val"),rangeTex(fn.range(p)));
+  renderLatex(card.querySelector(".asy-val"),rangeTex(fn.asy(p)));
 }
 
 const grid = document.getElementById("grid");
@@ -467,7 +725,7 @@ fns.forEach(fn => {
     sHtml += `<div class="slider-row">
       <label>${k}</label>
       <input type="range" data-p="${k}" min="${pr.min}" max="${pr.max}" step="${pr.step}" value="${pr.val}">
-      <span id="${fn.id}-${k}-v">${F(pr.val)}</span>
+      <span id="${fn.id}-${k}-v">${fn.trig && k==="d" ? PI(pr.val) : F(pr.val)}</span>
     </div>`;
   }
   card.innerHTML = `
@@ -484,12 +742,17 @@ fns.forEach(fn => {
 
   card.querySelectorAll("input[type=range]").forEach(inp => {
     inp.addEventListener("input", () => {
-      document.getElementById(`${fn.id}-${inp.dataset.p}-v`).textContent = F(parseFloat(inp.value));
+      document.getElementById(`${fn.id}-${inp.dataset.p}-v`).textContent = (fn.trig && inp.dataset.p==="d") ? PI(parseFloat(inp.value)) : F(parseFloat(inp.value));
       updateCard(fn, card);
     });
   });
   updateCard(fn, card);
 });
+
+function refreshExplorerMath(){
+  document.querySelectorAll(".card").forEach((card,i)=>updateCard(fns[i],card));
+}
+window.addEventListener("load",refreshExplorerMath);
 
 window.addEventListener("resize", () => {
   document.querySelectorAll(".card").forEach((card, i) => updateCard(fns[i], card));
@@ -498,6 +761,120 @@ window.addEventListener("resize", () => {
 window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => {
   document.querySelectorAll(".card").forEach((card, i) => updateCard(fns[i], card));
 });
+
+
+// --- Quiz-Modus ------------------------------------------------------------
+const quiz = { kind:"graph", score:0, streak:0, fn:null, target:null, current:null, locked:false };
+const quizFns = fns.filter(fn => fn.id !== "tan");
+const shuffle = a => [...a].sort(() => Math.random() - .5);
+function specialKey(fn){ return fn.id.startsWith("pow_") ? "n" : (["exp","log"].includes(fn.id) ? "b" : null); }
+function manipKeys(fn){ const sk=specialKey(fn); return Object.keys(fn.params).filter(k=>k!==sk); }
+function isTrigShift(fn,k){ return fn.trig && k==="d"; }
+function uiValue(fn,k,v){ return isTrigShift(fn,k)?Math.round(v/Math.PI*2)/2:v; }
+function modelValue(fn,k,v){ return isTrigShift(fn,k)?v*Math.PI:v; }
+function displayQuizValue(fn,k,v){ return isTrigShift(fn,k)?PI(v):F(v); }
+function quizSpec(fn,k){
+  if(isTrigShift(fn,k)) return {min:-2,max:2,step:.5};
+  const p=fn.params[k]; return {min:p.min,max:p.max,step:1};
+}
+function randomParam(fn,k){
+  const sp=quizSpec(fn,k), vals=[];
+  for(let v=sp.min;v<=sp.max+1e-9;v+=sp.step) vals.push(modelValue(fn,k,v));
+  const usable=vals.filter(v=>(k!=="a"&&k!=="m")||v!==0);
+  return usable[Math.floor(Math.random()*usable.length)];
+}
+function makeTarget(fn){
+  const p={}; const sk=specialKey(fn);
+  Object.keys(fn.params).forEach(k=>p[k]=k===sk?fn.params[k].val:randomParam(fn,k));
+  if("a" in p && Math.abs(p.a)>2)p.a=Math.sign(p.a)*2;
+  if("e" in p)p.e=Math.max(-3,Math.min(3,p.e));
+  if("d" in p && !fn.trig)p.d=Math.max(-3,Math.min(3,p.d));
+  if(fn.trig){p.a=Math.max(-2,Math.min(2,p.a));p.b=Math.max(1,Math.min(3,p.b));}
+  return p;
+}
+function differentStart(fn,target){
+  const p={}; const sk=specialKey(fn);
+  Object.keys(fn.params).forEach(k=>{
+    if(k===sk){p[k]=target[k];return;}
+    const sp=quizSpec(fn,k),t=uiValue(fn,k,target[k]); let v=t+sp.step;
+    if(v>sp.max)v=t-sp.step; p[k]=modelValue(fn,k,v);
+  }); return p;
+}
+function baseParams(fn,target){ const p={};Object.keys(fn.params).forEach(k=>p[k]=fn.params[k].val);const sk=specialKey(fn);if(sk)p[sk]=target[sk];return p; }
+function groundEquation(fn,target){
+  const p=baseParams(fn,target);
+  if(fn.id==="linear")return "g(x) = x";
+  if(fn.id.startsWith("pow_")){const sign=fn.id.endsWith("n")?"−":"";return `g(x) = x^${sign}${p.n}`;}
+  if(fn.id==="exp")return `g(x) = ${p.b}^x`;
+  if(fn.id==="log")return `g(x) = log_${p.b}(x)`;
+  if(fn.id==="sqrt")return "g(x) = √x";
+  if(fn.id==="sin")return "g(x) = sin(x)";
+  if(fn.id==="cos")return "g(x) = cos(x)";
+  return fn.title;
+}
+function groundCard(){const t=groundTex(quiz.fn,quiz.target);return `<div class="ground-function"><small>Vorgegebene Grundfunktion</small><strong data-tex="${encodeURIComponent(t)}" data-display="true"></strong></div>`;}
+function controlName(fn,k){
+  if(k==="a"||k==="m")return "Streckung an der y-Achse";
+  if(k==="d")return "Verschiebung an der x-Achse";
+  if(k==="e"||k==="q")return "Verschiebung an der y-Achse";
+  if(fn.trig&&k==="b")return "Streckung an der x-Achse";
+  return `Parameter ${k}`;
+}
+function updateQuizProgress(){scoreText.textContent=`${quiz.score} von 50 Punkten`;streakText.textContent=`Serie: ${quiz.streak} · nächster Treffer: +${quiz.streak+1}`;progressFill.style.width=Math.min(100,quiz.score/50*100)+"%";}
+function taskIntro(title,text){return `<div class="quiz-eyebrow">${quiz.fn.title}</div><h2>${title}</h2><p class="quiz-instruction">${text}</p>`;}
+function renderQuizTask(){
+  quiz.locked=false;quiz.fn=quizFns[Math.floor(Math.random()*quizFns.length)];quiz.target=makeTarget(quiz.fn);quiz.current=differentStart(quiz.fn,quiz.target);
+  finishPanel.classList.remove("show");taskArea.style.display="block";
+  if(quiz.kind==="graph")renderGraphParameterTask();else if(quiz.kind==="equation")renderEquationGraphTask();else renderDomainRangeTask();
+}
+function renderGraphParameterTask(){
+  const fields=manipKeys(quiz.fn).map(k=>{const sp=quizSpec(quiz.fn,k),hint=isTrigShift(quiz.fn,k)?"Faktor vor π, 0.5-Schritte":"ganze Zahl";return `<label class="param-input-row"><span class="named-control">${controlName(quiz.fn,k)}</span><input data-answer="${k}" type="number" min="${sp.min}" max="${sp.max}" step="${sp.step}" placeholder="Wert"><span class="quiz-value">${hint}</span></label>`}).join("");
+  const trig=quiz.fn.trig?`<div class="trig-note">Bei der Verschiebung an der x-Achse gibst du den Faktor vor π ein: 0.5 bedeutet 0.5π, −1 bedeutet −π.</div>`:"";
+  taskArea.innerHTML=taskIntro("Bestimme die Manipulationen","Die Grundfunktion ist gegeben. Bestimme nur, wie sie gestreckt, gespiegelt oder verschoben wurde.")+groundCard()+`<div class="quiz-layout"><div class="quiz-visual"><canvas id="quizTargetCanvas"></canvas></div><div class="answer-panel">${trig}${fields}<div class="actions"><button type="button" class="action-btn primary" id="checkQuiz">Antwort prüfen</button></div><div class="feedback" id="quizFeedback" aria-live="polite"></div></div></div>`;
+  renderMathNodes(taskArea);drawGraph(quiz.fn,document.getElementById("quizTargetCanvas"),quiz.target);document.getElementById("checkQuiz").addEventListener("click",checkGraphInputs);
+}
+function renderEquationGraphTask(){
+  const sliders=manipKeys(quiz.fn).map(k=>{const sp=quizSpec(quiz.fn,k),v=uiValue(quiz.fn,k,quiz.current[k]);return `<label class="quiz-slider-row"><span class="named-control">${controlName(quiz.fn,k)}</span><input data-slider="${k}" type="range" min="${sp.min}" max="${sp.max}" step="${sp.step}" value="${v}"><span class="quiz-value" data-value="${k}">${displayQuizValue(quiz.fn,k,quiz.current[k])}</span></label>`}).join("");
+  const tex=equationTex(quiz.fn,quiz.target);
+  taskArea.innerHTML=taskIntro("Zeichne den Graphen zur Funktionsgleichung","Stelle die Manipulationen mit den Schiebereglern ein. Die angezeigte Gleichung bleibt unverändert.")+`<div class="target-formula"><small>Funktionsgleichung</small><div data-tex="${encodeURIComponent(tex)}" data-display="true"></div></div><div class="quiz-layout"><div><div class="quiz-work-graph"><canvas id="quizMoveCanvas"></canvas></div><p class="guide-note"><span class="guide-key"></span>Gestrichelte Linien zeigen Asymptoten des aktuell eingestellten Graphen. Orange Punkte markieren charakteristische Stellen.</p></div><div class="answer-panel">${sliders}<div class="actions"><button type="button" class="action-btn primary" id="checkQuiz">Graph prüfen</button></div><div class="feedback" id="quizFeedback" aria-live="polite"></div></div></div>`;
+  renderMathNodes(taskArea);
+  const canvas=document.getElementById("quizMoveCanvas");drawGraph(quiz.fn,canvas,quiz.current);drawQuizGuides(quiz.fn,canvas,quiz.current);
+  taskArea.querySelectorAll("[data-slider]").forEach(inp=>inp.addEventListener("input",()=>{const k=inp.dataset.slider;quiz.current[k]=modelValue(quiz.fn,k,parseFloat(inp.value));taskArea.querySelector(`[data-value="${k}"]`).textContent=displayQuizValue(quiz.fn,k,quiz.current[k]);drawGraph(quiz.fn,canvas,quiz.current);drawQuizGuides(quiz.fn,canvas,quiz.current)}));
+  document.getElementById("checkQuiz").addEventListener("click",()=>assessManip(quiz.current));
+}
+function paramsMatch(given,target,keys){return keys.every(k=>Number.isFinite(given[k])&&Math.abs(given[k]-target[k])<1e-6);}
+function checkGraphInputs(){const given={};let complete=true;taskArea.querySelectorAll("[data-answer]").forEach(i=>{if(i.value.trim()==="")complete=false;given[i.dataset.answer]=modelValue(quiz.fn,i.dataset.answer,parseFloat(i.value.replace(",",".")))});if(!complete){showFeedback("Bitte trage zuerst alle Werte ein.",false);return}assessManip(given);}
+function assessManip(given){grade(paramsMatch(given,quiz.target,manipKeys(quiz.fn)),"Mindestens eine Manipulation ist noch nicht richtig.");}
+function rangeCandidates(fn,p,wanted){
+  const correct=wanted==="def"?fn.def(p):fn.range(p), x=F(-p.d||0), y=F(p.e||0);
+  const pool=["ℝ","[0, ∞)","(0, ∞)","(−∞, 0]","(−∞, 0)",`[${x}, ∞)`,`(${x}, ∞)`,`(−∞, ${x}]`,`(−∞, ${x})`,`ℝ \\ {${x}}`,`[${y}, ∞)`,`(${y}, ∞)`,`(−∞, ${y}]`,`(−∞, ${y})`,`ℝ \\ {${y}}`,fn.def(p),fn.range(p)];
+  const unique=[...new Set(pool.filter(Boolean).map(String))].filter(v=>v!==correct);
+  return shuffle([correct,...shuffle(unique).slice(0,5)]);
+}
+function renderDomainRangeTask(){
+  const wanted=Math.random()<.5?"def":"range", showGraph=Math.random()<.5, correct=wanted==="def"?quiz.fn.def(quiz.target):quiz.fn.range(quiz.target), options=rangeCandidates(quiz.fn,quiz.target,wanted);
+  const ask=wanted==="def"?"Definitionsbereich":"Wertebereich";
+  const source=showGraph?`<div class="quiz-visual"><canvas id="rangeCanvas"></canvas></div>`:`<div class="source-equation" data-tex="${encodeURIComponent(equationTex(quiz.fn,quiz.target))}" data-display="true"></div>`;
+  taskArea.innerHTML=taskIntro("Bereiche bestimmen",showGraph?"Lies den gesuchten Bereich am Graphen ab.":"Bestimme den gesuchten Bereich aus der Funktionsgleichung.")+`<h3 class="range-prompt">Gesucht: ${ask}</h3>${source}<div class="range-options">${options.map(v=>`<button type="button" class="range-option" data-range="${encodeURIComponent(v)}"><span data-tex="${encodeURIComponent(rangeTex(v))}"></span></button>`).join("")}</div><div class="feedback" id="quizFeedback" aria-live="polite"></div>`;
+  renderMathNodes(taskArea);if(showGraph)drawGraph(quiz.fn,document.getElementById("rangeCanvas"),quiz.target);
+  taskArea.querySelectorAll(".range-option").forEach(b=>b.addEventListener("click",()=>{if(quiz.locked)return;const chosen=decodeURIComponent(b.dataset.range),ok=chosen===String(correct);b.classList.add(ok?"correct":"wrong");if(!ok)taskArea.querySelectorAll(".range-option").forEach(x=>{if(decodeURIComponent(x.dataset.range)===String(correct))x.classList.add("correct")});grade(ok,`Diese Auswahl ist nicht korrekt. Die richtige Antwort ist grün markiert.`);}));
+}
+function showFeedback(text,ok){const el=document.getElementById("quizFeedback");if(el){el.textContent=text;el.className="feedback "+(ok?"success":"error");}}
+function motivation(){if(quiz.streak>=6)return `Starke Serie: ${quiz.streak} richtige Aufgaben in Folge.`;if(quiz.streak>=3)return `${quiz.streak} Treffer in Folge. Die nächste Aufgabe zählt +${quiz.streak+1}.`;return ["Genau erkannt.","Passt. Weiter zur nächsten Aufgabe.","Richtig eingestellt."][Math.floor(Math.random()*3)];}
+function grade(ok,detail=""){if(quiz.locked)return;quiz.locked=true;if(ok){quiz.streak++;quiz.score+=quiz.streak;showFeedback(`Richtig: +${quiz.streak} Punkt${quiz.streak===1?"":"e"}. ${motivation()}`,true);updateQuizProgress();setTimeout(()=>quiz.score>=50?finishQuiz():renderQuizTask(),1250)}else{quiz.streak=0;updateQuizProgress();showFeedback(`${detail} Deine Gesamtpunkte bleiben; die Serie beginnt neu.`,false);setTimeout(renderQuizTask,1900);}}
+function finishQuiz(){taskArea.style.display="none";finishPanel.classList.add("show");for(let i=0;i<55;i++){const s=document.createElement("span");s.className="spark";s.textContent=["✨","◆","●","★"][i%4];s.style.left=Math.random()*100+"%";s.style.color=["#f5b700","#7b61ff","#ec4899","#22a860"][i%4];s.style.animationDuration=(1.8+Math.random()*2)+"s";s.style.animationDelay=Math.random()*.75+"s";quizCard.appendChild(s);}}
+function resizeQuizCanvas(){
+  if(quizView.hidden||!quiz.fn)return;
+  const move=document.getElementById("quizMoveCanvas");
+  if(move){drawGraph(quiz.fn,move,quiz.current);drawQuizGuides(quiz.fn,move,quiz.current);return;}
+  const single=document.querySelector("#taskArea canvas");
+  if(single)drawGraph(quiz.fn,single,quiz.target);
+}
+document.querySelectorAll(".mode-btn").forEach(btn=>btn.addEventListener("click",()=>{document.querySelectorAll(".mode-btn").forEach(b=>b.classList.toggle("active",b===btn));const q=btn.dataset.view==="quiz";learnView.hidden=q;quizView.hidden=!q;if(q)renderQuizTask();}));
+document.querySelectorAll(".quiz-kind-btn").forEach(btn=>btn.addEventListener("click",()=>{quiz.kind=btn.dataset.kind;document.querySelectorAll(".quiz-kind-btn").forEach(b=>b.classList.toggle("active",b===btn));renderQuizTask();}));
+newTaskBtn.addEventListener("click",renderQuizTask);
+restartQuiz.addEventListener("click",()=>{quiz.score=0;quiz.streak=0;quizCard.querySelectorAll(".spark").forEach(s=>s.remove());updateQuizProgress();renderQuizTask();});
+window.addEventListener("resize",resizeQuizCanvas);updateQuizProgress();
 </script>
 </body>
 </html>
